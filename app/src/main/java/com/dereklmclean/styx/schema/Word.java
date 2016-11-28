@@ -1,4 +1,4 @@
-package com.dereklmclean.styx.schema.atoms;
+package com.dereklmclean.styx.schema;
 
 import com.dereklmclean.styx.WordList;
 
@@ -6,7 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Random;
 
-public class Word implements Atom {
+public class Word implements Generator {
     private final Random mRng;
     private final int mWordCount;
     private final WordList mWordList;

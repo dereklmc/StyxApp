@@ -1,7 +1,6 @@
 package com.dereklmclean.styx;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -9,22 +8,24 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.dereklmclean.styx.provider.WordsDatabase;
-import com.dereklmclean.styx.schema.atoms.CharSet;
-import com.dereklmclean.styx.schema.atoms.RandomNumber;
-import com.dereklmclean.styx.schema.atoms.Word;
+import com.dereklmclean.styx.schema.CharSet;
+import com.dereklmclean.styx.schema.RandomNumber;
+import com.dereklmclean.styx.schema.Schema;
+import com.dereklmclean.styx.schema.Word;
 
 public class PasswordGeneratorActivity extends ActionBarActivity {
 
     private static final String TAG = PasswordGeneratorActivity.class.getSimpleName();
 
     Button button;
-    private WordsDatabase db;
     private TextView passwordView;
-    private WordList mWordList;
-    private Schema mSchema = Schema.ONE;
+    private Schema first = new Schema();
+    private Schema second = new Schema();
+    private Schema mSelected = null;
     private TextView entropyView;
 
     @Override
@@ -35,9 +36,30 @@ public class PasswordGeneratorActivity extends ActionBarActivity {
         button.setOnClickListener(new GeneratePasswordClickHandler());
         passwordView = (TextView) findViewById(R.id.password_display);
         entropyView = (TextView) findViewById(R.id.entropy_display);
-        db = new WordsDatabase(this);
-        mWordList = new WordDbList(db);
-        Log.i(TAG, "Word DB Count of Length: " + mWordList.size());
+
+        final WordsDatabase db = new WordsDatabase(this);
+        final WordList mWordList = new WordDbList(db);
+
+        final Word word = new Word(mWordList);
+        final RandomNumber randomNumber = new RandomNumber(3);
+        final CharSet symbolSet = new CharSet(new char[]{'@', '#', '$', '%', '&', '*', '!', '~'});
+
+        first.add(word);
+        first.add(randomNumber);
+        first.add(word);
+        first.add(word);
+        first.add(word);
+
+        second.add(word);
+        second.add(randomNumber);
+        second.add(word);
+        second.add(word);
+        second.add(word);
+        second.add(symbolSet);
+
+        final int selected = ((RadioGroup) findViewById(R.id.schema_selector)).getCheckedRadioButtonId();
+        selectSchema(selected);
+
     }
 
     @Override
@@ -62,44 +84,21 @@ public class PasswordGeneratorActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @NonNull
-    private String generateSchemaOne() {
-        final Word word = new Word(mWordList);
-        RandomNumber randomNumber = new RandomNumber(3);
-        String word1 = word.generate();
-        String word2 = word.generate();
-        String word3 = word.generate();
-        String word4 = word.generate();
-        String number = randomNumber.generate();
-        entropyView.setText(String.valueOf(word.entropy() * 4 + randomNumber.entropy()));
-        return word1 + number + word2 + word3 + word4;
-    }
-
-    @NonNull
-    private String generateSchemaTwo() {
-        final Word word = new Word(mWordList);
-        RandomNumber randomNumber = new RandomNumber(3);
-        CharSet symbolSet = new CharSet(new char[]{'@', '#', '$', '%', '&', '*', '!', '~'});
-        String word1 = word.generate();
-        String word2 = word.generate();
-        String word3 = word.generate();
-        String word4 = word.generate();
-        String number = randomNumber.generate();
-        String symbol = symbolSet.generate();
-        entropyView.setText(String.valueOf(word.entropy() * 4 + randomNumber.entropy() + symbolSet.entropy()));
-        return word1 + number + word2 + word3 + word4 + symbol;
-    }
-
     public void onSchemaSelected(View view) {// Is the button now checked?
         boolean checked = ((RadioButton) view).isChecked();
 
         if (checked) {
             // Check which radio button was clicked
-            switch (view.getId()) {
-                case R.id.schema_1: mSchema = Schema.ONE; break;
-                case R.id.schema_2: mSchema = Schema.TWO; break;
-            }
+            selectSchema(view.getId());
         }
+    }
+
+    private void selectSchema(int id) {
+        switch (id) {
+            case R.id.schema_1: mSelected = first; break;
+            case R.id.schema_2: mSelected = second; break;
+        }
+        entropyView.setText(String.valueOf(mSelected.entropy()));
     }
 
     class GeneratePasswordClickHandler implements View.OnClickListener {
@@ -107,21 +106,12 @@ public class PasswordGeneratorActivity extends ActionBarActivity {
         @Override
         public void onClick(View v) {
             final String password;
-            switch (mSchema) {
-                case ONE:
-                    password = generateSchemaOne(); break;
-                case TWO:
-                    password = generateSchemaTwo(); break;
-                default:
-                    password = "";
-
+            if (mSelected == null) {
+                password = "";
+            } else {
+                password = mSelected.generate();
             }
             passwordView.setText(password);
         }
-    }
-
-    enum Schema {
-        ONE, // [word][number][word][word][word]
-        TWO, // [word][number][word][word][word][symbol]
     }
 }

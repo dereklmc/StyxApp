@@ -1,11 +1,11 @@
-package com.dereklmclean.styx.schema.atoms;
+package com.dereklmclean.styx.schema;
 
 import com.dereklmclean.styx.RandomNumberGenerator;
 
 /**
  * Created by derek on 9/16/16.
  */
-public class CharSet implements Atom {
+public class CharSet implements Generator {
 
     private final char[] mCharSet;
     private final RandomNumberGenerator mRng;
